@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Sistema de Autenticação</title>
+    <!-- Bootstrap CSS -->
+    <link
+      href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.2/css/bootstrap.min.css"
+      rel="stylesheet"
+    />
+    <style>
+      .auth-container {
+        max-width: 400px;
+        margin: 50px auto;
+      }
+      #logged-content {
+        display: none;
+      }
+    </style>
+  </head>
+  <body>
+    <!-- Registration and Login Forms -->
+    <div id="auth-forms">
+      <div class="container auth-container">
+        <ul class="nav nav-tabs" id="authTabs" role="tablist">
+          <li class="nav-item" role="presentation">
+            <button
+              class="nav-link active"
+              id="login-tab"
+              data-bs-toggle="tab"
+              data-bs-target="#login"
+              type="button"
+              role="tab"
+            >
+              Login
+            </button>
+          </li>
+          <li class="nav-item" role="presentation">
+            <button
+              class="nav-link"
+              id="register-tab"
+              data-bs-toggle="tab"
+              data-bs-target="#register"
+              type="button"
+              role="tab"
+            >
+              Registro
+            </button>
+          </li>
+        </ul>
+        <div class="tab-content p-3 border border-top-0">
+          <!-- Login Form -->
+          <div class="tab-pane fade show active" id="login" role="tabpanel">
+            <form id="loginForm">
+              <div class="mb-3">
+                <label for="loginEmail" class="form-label">Email</label>
+                <input
+                  type="email"
+                  class="form-control"
+                  id="loginEmail"
+                  required
+                />
+              </div>
+              <div class="mb-3">
+                <label for="loginPassword" class="form-label">Senha</label>
+                <input
+                  type="password"
+                  class="form-control"
+                  id="loginPassword"
+                  required
+                />
+              </div>
+              <button type="submit" class="btn btn-primary w-100">
+                Entrar
+              </button>
+            </form>
+          </div>
+          <!-- Register Form -->
+          <div class="tab-pane fade" id="register" role="tabpanel">
+            <form id="registerForm">
+              <div class="mb-3">
+                <label for="registerEmail" class="form-label">Email</label>
+                <input
+                  type="email"
+                  class="form-control"
+                  id="registerEmail"
+                  required
+                />
+              </div>
+              <div class="mb-3">
+                <label for="registerPassword" class="form-label">Senha</label>
+                <input
+                  type="password"
+                  class="form-control"
+                  id="registerPassword"
+                  required
+                />
+              </div>
+              <button type="submit" class="btn btn-success w-100">
+                Registrar
+              </button>
+            </form>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Logged In Content -->
+    <div id="logged-content" class="container mt-5">
+      <div class="row">
+        <div class="col-md-8 offset-md-2">
+          <div class="card">
+            <div class="card-body">
+              <h4 class="card-title">Bem-vindo!</h4>
+              <p class="card-text">Você está logado no sistema.</p>
+              <button id="logoutBtn" class="btn btn-danger">Sair</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Alert for messages -->
+    <div class="position-fixed bottom-0 end-0 p-3" style="z-index: 11">
+      <div
+        id="toast"
+        class="toast"
+        role="alert"
+        aria-live="assertive"
+        aria-atomic="true"
+      >
+        <div class="toast-header">
+          <strong class="me-auto">Mensagem</strong>
+          <button
+            type="button"
+            class="btn-close"
+            data-bs-dismiss="toast"
+            aria-label="Close"
+          ></button>
+        </div>
+        <div class="toast-body"></div>
+      </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.7.1/jquery.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.2/js/bootstrap.bundle.min.js"></script>
+    <script>
+      // API URL base - ajuste conforme necessário
+      const API_BASE_URL = "http://localhost:8080/";
+
+      // Função para mostrar mensagens
+      function showMessage(message, isError = false) {
+        const toast = new bootstrap.Toast(document.getElementById("toast"));
+        $("#toast .toast-body").text(message);
+        $("#toast").removeClass("bg-danger bg-success");
+        $("#toast").addClass(isError ? "bg-danger" : "bg-success");
+        toast.show();
+      }
+
+      // Verifica se há token salvo e valida
+      function checkAuth() {
+        const token = localStorage.getItem("token");
+        if (token) {
+          $.ajax({
+            url: API_BASE_URL + "verify",
+            type: "GET",
+            data: { token: token },
+            success: function () {
+              showLoggedContent();
+            },
+            error: function () {
+              localStorage.removeItem("token");
+              showAuthForms();
+            },
+          });
+        }
+      }
+
+      // Mostra conteúdo para usuários logados
+      function showLoggedContent() {
+        $("#auth-forms").hide();
+        $("#logged-content").show();
+      }
+
+      // Mostra formulários de autenticação
+      function showAuthForms() {
+        $("#auth-forms").show();
+        $("#logged-content").hide();
+      }
+
+      // Registro de usuário
+      $("#registerForm").on("submit", function (e) {
+        e.preventDefault();
+        $.ajax({
+          url: API_BASE_URL + "register",
+          type: "POST",
+          data: {
+            email: $("#registerEmail").val(),
+            password: $("#registerPassword").val(),
+          },
+          success: function (response) {
+            showMessage("Registro realizado com sucesso!");
+            $('#authTabs button[data-bs-target="#login"]').tab("show");
+            $("#registerForm")[0].reset();
+          },
+          error: function (xhr) {
+            showMessage(xhr.responseJSON?.messages.error || "Erro ao registrar", true);
+          },
+        });
+      });
+
+      // Login de usuário
+      $("#loginForm").on("submit", function (e) {
+        e.preventDefault();
+        $.ajax({
+          url: API_BASE_URL + "login",
+          type: "POST",
+          data: {
+            email: $("#loginEmail").val(),
+            password: $("#loginPassword").val(),
+          },
+          success: function (response) {
+            localStorage.setItem("token", response.token);
+            showMessage("Login realizado com sucesso!");
+            showLoggedContent();
+            $("#loginForm")[0].reset();
+          },
+          error: function (xhr) {
+            showMessage(
+              xhr.responseJSON?.messages.error || "Erro ao fazer login",
+              true
+            );
+          },
+        });
+      });
+
+      // Logout de usuário
+      $("#logoutBtn").on("click", function () {
+        const token = localStorage.getItem("token");
+        if (token) {
+          $.ajax({
+            url: API_BASE_URL + "logout",
+            type: "POST",
+            data: { token: token },
+            success: function () {
+              localStorage.removeItem("token");
+              showMessage("Logout realizado com sucesso!");
+              showAuthForms();
+            },
+            error: function () {
+              showMessage("Erro ao fazer logout", true);
+            },
+          });
+        }
+      });
+
+      // Verificar autenticação ao carregar a página
+      $(document).ready(function () {
+        checkAuth();
+      });
+    </script>
+  </body>
+</html>
