@@ -146,11 +146,12 @@
     <!-- Scripts -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.7.1/jquery.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.2/js/bootstrap.bundle.min.js"></script>
+
     <script>
-      // API URL base - ajuste conforme necessário
+      // URL base da API - ajuste conforme necessário
       const API_BASE_URL = "http://localhost:8080/";
 
-      // Função para mostrar mensagens
+      // Função para exibir mensagens
       function showMessage(message, isError = false) {
         const toast = new bootstrap.Toast(document.getElementById("toast"));
         $("#toast .toast-body").text(message);
@@ -159,32 +160,34 @@
         toast.show();
       }
 
-      // Verifica se há token salvo e valida
+      // Verificar autenticação ao carregar a página
       function checkAuth() {
         const token = localStorage.getItem("token");
         if (token) {
           $.ajax({
             url: API_BASE_URL + "verify",
-            type: "GET",
+            type: "POST",
             data: { token: token },
             success: function () {
-              showLoggedContent();
+              showLoggedContent(); // Exibe o conteúdo do usuário logado se o token for válido
             },
             error: function () {
-              localStorage.removeItem("token");
-              showAuthForms();
+              localStorage.removeItem("token"); // Remove o token se for inválido
+              showAuthForms(); // Exibe os formulários de login/registro
             },
           });
+        } else {
+          showAuthForms(); // Exibe os formulários de login/registro se o token não estiver presente
         }
       }
 
-      // Mostra conteúdo para usuários logados
+      // Exibir o conteúdo para usuários logados
       function showLoggedContent() {
         $("#auth-forms").hide();
         $("#logged-content").show();
       }
 
-      // Mostra formulários de autenticação
+      // Exibir formulários de autenticação
       function showAuthForms() {
         $("#auth-forms").show();
         $("#logged-content").hide();
@@ -202,11 +205,14 @@
           },
           success: function (response) {
             showMessage("Registro realizado com sucesso!");
-            $('#authTabs button[data-bs-target="#login"]').tab("show");
+            $('#authTabs button[data-bs-target="#login"]').tab("show"); // Alterna para a aba de login após o registro
             $("#registerForm")[0].reset();
           },
           error: function (xhr) {
-            showMessage(xhr.responseJSON?.messages.error || "Erro ao registrar", true);
+            showMessage(
+              xhr.responseJSON?.messages.error || "Erro ao registrar",
+              true
+            );
           },
         });
       });
@@ -222,9 +228,9 @@
             password: $("#loginPassword").val(),
           },
           success: function (response) {
-            localStorage.setItem("token", response.token);
+            localStorage.setItem("token", response.token); // Salva o token no armazenamento local
             showMessage("Login realizado com sucesso!");
-            showLoggedContent();
+            showLoggedContent(); // Exibe o conteúdo de usuário logado
             $("#loginForm")[0].reset();
           },
           error: function (xhr) {
@@ -245,9 +251,9 @@
             type: "POST",
             data: { token: token },
             success: function () {
-              localStorage.removeItem("token");
+              localStorage.removeItem("token"); // Remove o token ao fazer logout
               showMessage("Logout realizado com sucesso!");
-              showAuthForms();
+              showAuthForms(); // Exibe os formulários de login/registro
             },
             error: function () {
               showMessage("Erro ao fazer logout", true);
@@ -258,7 +264,7 @@
 
       // Verificar autenticação ao carregar a página
       $(document).ready(function () {
-        checkAuth();
+        checkAuth(); // Verifica automaticamente a autenticação do usuário ao carregar a página
       });
     </script>
   </body>
