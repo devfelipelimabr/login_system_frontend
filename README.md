@@ -38,7 +38,6 @@ Este é um projeto de sistema de autenticação básico desenvolvido em HTML, CS
    ```bash
    composer install
    ```
-````
 
 3. Configure o arquivo `.env` com as informações do banco de dados e uma chave secreta para JWT:
    ```
